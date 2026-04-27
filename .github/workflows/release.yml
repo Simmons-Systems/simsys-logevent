@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "node-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-attest:
+    name: Build tarball, attest, release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    defaults:
+      run:
+        working-directory: node
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: node/package-lock.json
+
+      - name: Install dependencies (locked)
+        run: npm ci
+
+      - name: TypeScript build
+        run: npm run build
+
+      - name: Run vitest
+        run: npm test
+
+      - name: Pack tarball
+        run: npm pack
+
+      - name: Generate build provenance attestation
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4
+        with:
+          subject-path: "node/*.tgz"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
+        with:
+          generate_release_notes: true
+          files: "node/*.tgz"

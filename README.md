@@ -1,5 +1,12 @@
 # @simsys/logevent
 
+[![CI](https://github.com/Avicennasis/simsys-logevent/actions/workflows/test-node.yml/badge.svg)](https://github.com/Avicennasis/simsys-logevent/actions/workflows/test-node.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/Avicennasis/simsys-logevent/badge)](https://scorecard.dev/viewer/?uri=github.com/Avicennasis/simsys-logevent)
+[![Release](https://img.shields.io/github/v/release/Avicennasis/simsys-logevent?display_name=tag)](https://github.com/Avicennasis/simsys-logevent/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
 Structured JSON log events for Node.js, designed for systemd-journal → Loki
 pipelines (Grafana Alloy `loki.source.journal`). Every call writes one
 JSON line to stdout.

@@ -4,6 +4,15 @@
   "description": "Structured JSON log events for Node.js — drop-in stdout writer for systemd-journal → Loki pipelines",
   "license": "MIT",
   "author": "Avicennasis",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Avicennasis/simsys-logevent.git",
+    "directory": "node"
+  },
+  "homepage": "https://github.com/Avicennasis/simsys-logevent#readme",
+  "bugs": {
+    "url": "https://github.com/Avicennasis/simsys-logevent/issues"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",

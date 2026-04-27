@@ -1,0 +1,4 @@
+# /git-standards persistent options for this repo.
+# See ~/github/wiki.simmons.systems/operations/new-github-repo-setup.md.
+
+release_artifacts: true   # release tier active — node-v* tags ship a tarball
