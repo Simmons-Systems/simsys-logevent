@@ -23,6 +23,13 @@
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
+const LEVEL_CODES: Record<LogLevel, number> = {
+  debug: 1,
+  info: 2,
+  warn: 3,
+  error: 4,
+};
+
 export interface LogEventPayload {
   /** Dot-separated kebab event type, e.g. "auth.signin", "shift.assigned". */
   event: string;
@@ -34,14 +41,24 @@ export interface LogEventPayload {
   route?: string;
   /** Result classifier — typically "success" | "failure" | "blocked". */
   outcome?: string;
+  /** Exception class or error category (e.g. "TypeError", "ECONNREFUSED"). */
+  error_type?: string;
+  /** Human-readable error description. */
+  error_message?: string;
+  /** Stack trace (for level: "error" events). */
+  stack?: string;
   /** Anything event-specific. */
   [key: string]: unknown;
 }
+
+import { hostname as osHostname } from "node:os";
 
 interface Config {
   service: string;
   defaultLevel: LogLevel;
   out: (line: string) => void;
+  hostname: string;
+  pid: number;
 }
 
 const config: Config = {
@@ -50,6 +67,8 @@ const config: Config = {
   out: (line: string) => {
     process.stdout.write(line + "\n");
   },
+  hostname: osHostname(),
+  pid: process.pid,
 };
 
 export interface ConfigureOpts {
@@ -93,10 +112,14 @@ export function logEvent(payload: LogEventPayload): void {
     return;
   }
   try {
+    const level = payload.level || config.defaultLevel;
     const line = JSON.stringify({
       ts: new Date().toISOString(),
-      level: payload.level || config.defaultLevel,
+      level,
+      level_code: LEVEL_CODES[level] ?? LEVEL_CODES[config.defaultLevel],
       service: config.service,
+      hostname: config.hostname,
+      pid: config.pid,
       ...payload,
     });
     config.out(line);
@@ -105,6 +128,32 @@ export function logEvent(payload: LogEventPayload): void {
     // The alternative (throwing) would crash request handlers on a
     // bad payload, which is far worse than a missing log line.
   }
+}
+
+/**
+ * Convenience wrapper for error events. Extracts error_type, error_message,
+ * and stack from the Error object and emits at level "error".
+ */
+export function logError(
+  event: string,
+  error: unknown,
+  extra?: Omit<LogEventPayload, "event" | "level" | "error_type" | "error_message" | "stack">,
+): void {
+  const fields: LogEventPayload = {
+    event,
+    level: "error",
+    ...extra,
+  };
+  if (error instanceof Error) {
+    fields.error_type = error.constructor.name;
+    fields.error_message = error.message;
+    if (error.stack) {
+      fields.stack = error.stack;
+    }
+  } else if (error != null) {
+    fields.error_message = String(error);
+  }
+  logEvent(fields);
 }
 
 /** For tests / advanced consumers — expose current service name. */
