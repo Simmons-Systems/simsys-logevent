@@ -87,6 +87,11 @@ func LogEvent(event string, level LogLevel, fields ...Field) {
 		mu.RUnlock()
 
 		payload := make(map[string]any, 8+len(fields))
+
+		for _, f := range fields {
+			payload[f.Key] = f.Value
+		}
+
 		payload["ts"] = time.Now().UTC().Format(time.RFC3339Nano)
 		payload["level"] = string(lvl)
 		payload["level_code"] = levelCodes[lvl]
@@ -94,10 +99,6 @@ func LogEvent(event string, level LogLevel, fields ...Field) {
 		payload["hostname"] = hostname
 		payload["pid"] = pid
 		payload["event"] = event
-
-		for _, f := range fields {
-			payload[f.Key] = f.Value
-		}
 
 		data, err := json.Marshal(payload)
 		if err != nil {

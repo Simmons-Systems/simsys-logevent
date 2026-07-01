@@ -114,13 +114,13 @@ export function logEvent(payload: LogEventPayload): void {
   try {
     const level = payload.level || config.defaultLevel;
     const line = JSON.stringify({
+      ...payload,
       ts: new Date().toISOString(),
       level,
       level_code: LEVEL_CODES[level] ?? LEVEL_CODES[config.defaultLevel],
       service: config.service,
       hostname: config.hostname,
       pid: config.pid,
-      ...payload,
     });
     config.out(line);
   } catch {
