@@ -71,6 +71,20 @@ const config: Config = {
   pid: process.pid,
 };
 
+// Cache the current ISO string to avoid expensive Date formatting
+// on every log event. Valid since Date.now() has millisecond resolution.
+let lastTime = 0;
+let lastIso = "";
+
+function getIsoTimestamp(): string {
+  const now = Date.now();
+  if (now !== lastTime) {
+    lastTime = now;
+    lastIso = new Date(now).toISOString();
+  }
+  return lastIso;
+}
+
 export interface ConfigureOpts {
   /** Service name. Required — used for filtering in Loki. */
   service: string;
@@ -114,7 +128,7 @@ export function logEvent(payload: LogEventPayload): void {
   try {
     const level = payload.level || config.defaultLevel;
     const line = JSON.stringify({
-      ts: new Date().toISOString(),
+      ts: getIsoTimestamp(),
       level,
       level_code: LEVEL_CODES[level] ?? LEVEL_CODES[config.defaultLevel],
       service: config.service,
