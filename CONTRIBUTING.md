@@ -6,7 +6,7 @@ improvements are all welcome.
 ## Dev setup
 
 ```bash
-git clone https://github.com/Avicennasis/simsys-logevent.git
+git clone https://github.com/Simmons-Systems/simsys-logevent.git
 cd simsys-logevent/node
 npm ci
 cd ..
@@ -15,14 +15,18 @@ npx pre-commit install   # or: pre-commit install (if installed globally)
 
 ## Running the tests
 
+Each SDK has its own suite; run the one(s) for the language you touched:
+
 ```bash
-cd node
-npm test
+npm --prefix node test        # Node (vitest)
+python3 -m pytest python/tests   # Python
+go -C go test ./...              # Go
 ```
 
-CI runs the tests against the configured Node.js LTS matrix (20/22/24) plus a
-build-only job on Node 18 to enforce the `engines` floor — make sure they
-pass locally before opening a PR.
+CI runs the Node tests against the configured Node.js LTS matrix (20/22/24)
+plus a build-only job on Node 18 to enforce the `engines` floor — make sure
+they pass locally before opening a PR. The Python and Go suites have no CI
+lane yet and run locally only.
 
 ## Code style
 
@@ -36,7 +40,7 @@ pre-commit run --all-files
 
 ## PR checklist
 
-- [ ] Tests added or updated; `npm test` is green locally.
+- [ ] Tests added or updated; the affected language's suite is green locally.
 - [ ] `pre-commit run --all-files` is clean.
 - [ ] README and docs updated if public behavior changed.
 - [ ] `CHANGELOG.md` updated under `[Unreleased]`.

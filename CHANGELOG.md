@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Docs: README and CONTRIBUTING updated for the Python and Go SDKs and
+  the auto-populated `level_code`/`hostname`/`pid` fields; stale
+  pre-transfer links fixed.
+
 ## [0.1.1] - 2026-04-29 (`node-v0.1.1`)
 
 ### Changed
@@ -38,5 +44,6 @@ Initial release. Node-only.
   `out` override behaviour.
 - GitHub release tarball distribution (no npm registry).
 
-[Unreleased]: https://github.com/Avicennasis/simsys-logevent/compare/node-v0.1.0...HEAD
-[0.1.0]: https://github.com/Avicennasis/simsys-logevent/releases/tag/node-v0.1.0
+[Unreleased]: https://github.com/Simmons-Systems/simsys-logevent/compare/node-v0.1.1...HEAD
+[0.1.1]: https://github.com/Simmons-Systems/simsys-logevent/releases/tag/node-v0.1.1
+[0.1.0]: https://github.com/Simmons-Systems/simsys-logevent/releases/tag/node-v0.1.0

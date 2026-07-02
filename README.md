@@ -7,9 +7,9 @@
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-Structured JSON log events for Node.js, designed for systemd-journal → Loki
-pipelines (Grafana Alloy `loki.source.journal`). Every call writes one
-JSON line to stdout.
+Structured JSON log events for Node.js, Python, and Go, designed for
+systemd-journal → Loki pipelines (Grafana Alloy `loki.source.journal`).
+Every call writes one JSON line to stdout.
 
 The library is intentionally minimal — `console.log(JSON.stringify(...))`
 with a stable schema, a configured service name, and never-throws
@@ -28,10 +28,15 @@ Pin to a release artifact (no npm registry):
 }
 ```
 
+Parity SDKs for Python (`python/simsys_logevent/`) and Go (`go/`,
+module `github.com/Simmons-Systems/simsys-logevent/go`) live in this
+repo. Neither is published to a package index: Go consumers `go get`
+the module path; Python consumers vendor the package directory.
+
 ## Usage
 
 ```ts
-import { configure, logEvent } from "@simsys/logevent";
+import { configure, logEvent, logError } from "@simsys/logevent";
 
 configure({ service: "board-portal" });
 
@@ -49,24 +54,31 @@ logEvent({
   shift_id: "abc123",
   level: "info",
 });
+
+// In a catch block — extracts error_type/error_message/stack,
+// emits at level "error":
+logError("db.query.failed", err, { route: "/api/shifts" });
 ```
 
 Emits one JSON line per call, e.g.:
 
 ```json
-{"ts":"2026-04-27T12:34:56.789Z","level":"info","service":"board-portal","event":"auth.signin","user":"alice@example.org","route":"/api/auth/callback/google","outcome":"success"}
+{"user":"alice@example.org","route":"/api/auth/callback/google","outcome":"success","ts":"2026-04-27T12:34:56.789Z","level":"info","level_code":2,"service":"board-portal","hostname":"bfr","pid":12345,"event":"auth.signin"}
 ```
 
 ## Schema
 
 Every emitted object includes:
 
-| Field     | Type   | Notes                                                   |
-| --------- | ------ | ------------------------------------------------------- |
-| `ts`      | string | ISO-8601 UTC. Set by the library.                       |
-| `level`   | string | `debug`/`info`/`warn`/`error`. Defaults to `info`.      |
-| `service` | string | Set by `configure({ service })`. Required.              |
-| `event`   | string | Caller-provided. Dot-separated kebab.                   |
+| Field        | Type   | Notes                                                |
+| ------------ | ------ | ---------------------------------------------------- |
+| `ts`         | string | ISO-8601 UTC. Set by the library.                    |
+| `level`      | string | `debug`/`info`/`warn`/`error`. Defaults to `info`.   |
+| `level_code` | number | `1`–`4` (debug→error). Set by the library.           |
+| `service`    | string | Set by `configure({ service })`. Required.           |
+| `hostname`   | string | OS hostname. Set by the library.                     |
+| `pid`        | number | Process ID. Set by the library.                      |
+| `event`      | string | Caller-provided. Dot-separated kebab.                |
 
 Suggested optional fields:
 
@@ -77,7 +89,10 @@ Suggested optional fields:
 | `outcome` | string | `success` / `failure` / `blocked` / domain-specific.    |
 
 Anything else is preserved on the emitted JSON. Use whatever
-event-specific fields you need.
+event-specific fields you need. Library-set fields (`ts`, `level`,
+`level_code`, `service`, `hostname`, `pid`, `event`) always win over
+caller-supplied keys of the same name — payloads can't spoof system
+metadata.
 
 ## Cardinality reminder
 
