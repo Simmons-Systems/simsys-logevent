@@ -63,6 +63,7 @@ def log_event(
     lvl = level or _default_level
     try:
         payload = {
+            **kwargs,
             "ts": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "level": lvl,
             "level_code": _LEVEL_CODES.get(lvl, _LEVEL_CODES[_default_level]),
@@ -70,7 +71,6 @@ def log_event(
             "hostname": _hostname,
             "pid": _pid,
             "event": event,
-            **kwargs,
         }
         _out(json.dumps(payload, default=str))
     except Exception:

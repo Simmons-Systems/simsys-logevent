@@ -128,3 +128,25 @@ func TestGetService(t *testing.T) {
 		t.Errorf("GetService() = %q, want test-svc", s)
 	}
 }
+
+func TestLogEvent_NoSpoofing(t *testing.T) {
+	var buf bytes.Buffer
+	Configure(ConfigureOpts{
+		Service: "test-service",
+		Out:     &buf,
+	})
+
+	LogEvent("auth.signin", Info, F("service", "hacker"), F("pid", 999), F("event", "spoofed"))
+
+	var parsed map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &parsed); err != nil {
+		t.Fatalf("failed to parse json: %v", err)
+	}
+
+	if parsed["service"] != "test-service" {
+		t.Errorf("expected service 'test-service', got '%v'", parsed["service"])
+	}
+	if parsed["event"] != "auth.signin" {
+		t.Errorf("expected event 'auth.signin', got '%v'", parsed["event"])
+	}
+}
