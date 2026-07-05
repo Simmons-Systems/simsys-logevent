@@ -1,6 +1,6 @@
 {
   "name": "@simsys/logevent",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Structured JSON log events for Node.js — drop-in stdout writer for systemd-journal → Loki pipelines",
   "license": "MIT",
   "author": "Avicennasis",
@@ -23,7 +23,7 @@
     }
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "files": [
     "dist",

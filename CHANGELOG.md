@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Node: engines floor raised `node>=18` → `node>=20`; package version
+  `0.1.1` → `0.2.0`.** Node 18 has been EOL since April 2025, and the dev
+  toolchain (vitest@4) already required Node 20+. CI's Node 20 matrix lane
+  now exercises the floor directly, so the build-only `build-node18` job
+  was removed. Consumers still on Node 18 should stay on `0.1.x`. No API
+  or runtime behavior changes.
 - Docs: README and CONTRIBUTING updated for the Python and Go SDKs and
   the auto-populated `level_code`/`hostname`/`pid` fields; stale
   pre-transfer links fixed.
