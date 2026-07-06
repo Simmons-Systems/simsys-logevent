@@ -34,8 +34,8 @@ type ConfigureOpts struct {
 
 var (
 	mu           sync.RWMutex
-	service      = "unknown"
-	defaultLevel = Info
+	service                = "unknown"
+	defaultLevel           = Info
 	out          io.Writer = os.Stdout
 	hostname     string
 	pid          int
@@ -46,9 +46,14 @@ func init() {
 	pid = os.Getpid()
 }
 
-func Configure(opts ConfigureOpts) {
+// Configure sets the module-level state. Typically called once at startup.
+//
+// Returns an error when Service is empty — matching the Node and Python
+// SDKs, which reject an empty service without crashing the process.
+// (Changed from panicking; see ticket FR-076/FR-086.)
+func Configure(opts ConfigureOpts) error {
 	if opts.Service == "" {
-		panic("logevent.Configure: Service must be non-empty")
+		return fmt.Errorf("logevent.Configure: Service must be non-empty")
 	}
 	mu.Lock()
 	defer mu.Unlock()
@@ -59,6 +64,7 @@ func Configure(opts ConfigureOpts) {
 	if opts.Out != nil {
 		out = opts.Out
 	}
+	return nil
 }
 
 type Field struct {
@@ -75,12 +81,26 @@ func LogEvent(event string, level LogLevel, fields ...Field) {
 		return
 	}
 	func() {
-		defer func() { recover() }()
+		defer func() {
+			if r := recover(); r != nil {
+				// Logging must never crash the caller, but swallowing
+				// panics with zero output made failures undiagnosable
+				// (FR-072). Best-effort breadcrumb to stderr.
+				fmt.Fprintf(os.Stderr, "simsys-logevent: recovered panic in LogEvent(%q): %v\n", event, r)
+			}
+		}()
 
 		mu.RLock()
 		svc := service
 		lvl := level
 		if lvl == "" {
+			lvl = defaultLevel
+		}
+		if _, ok := levelCodes[lvl]; !ok {
+			// Unknown level strings previously produced a level/level_code
+			// mismatch (level kept the bogus string, level_code was 0).
+			// Normalize to the configured default so the pair always
+			// agrees (FR-071).
 			lvl = defaultLevel
 		}
 		w := out
@@ -108,25 +128,38 @@ func LogEvent(event string, level LogLevel, fields ...Field) {
 	}()
 }
 
+// LogError emits an error-level event with error_type, error_message, and
+// stack extracted from err. Caller-supplied fields take precedence over the
+// extracted ones on key collision.
 func LogError(event string, err error, fields ...Field) {
 	extra := make([]Field, 0, len(fields)+3)
 	if err != nil {
-		extra = append(extra, F("error_type", errorType(err)))
+		extra = append(extra, F("error_type", fmt.Sprintf("%T", err)))
 		extra = append(extra, F("error_message", err.Error()))
 		extra = append(extra, F("stack", captureStack()))
 	}
+	// User fields append last: in LogEvent's payload map, later duplicate
+	// keys win, so explicit caller fields override extracted error fields.
 	extra = append(extra, fields...)
 	LogEvent(event, Error, extra...)
 }
 
-func errorType(err error) string {
-	return fmt.Sprintf("%T", err)
-}
-
+// captureStack returns the current goroutine's stack, growing the buffer
+// until the trace fits (previously a fixed 4096-byte buffer silently
+// truncated deep stacks — FR-087). Capped at 256 KiB.
 func captureStack() string {
-	buf := make([]byte, 4096)
-	n := runtime.Stack(buf, false)
-	return string(buf[:n])
+	size := 4096
+	for {
+		buf := make([]byte, size)
+		n := runtime.Stack(buf, false)
+		if n < len(buf) {
+			return string(buf[:n])
+		}
+		size *= 2
+		if size > 256*1024 {
+			return string(buf[:n]) + "\n... (stack truncated at 256KiB)"
+		}
+	}
 }
 
 func GetService() string {

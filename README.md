@@ -73,12 +73,12 @@ Every emitted object includes:
 | Field        | Type   | Notes                                                |
 | ------------ | ------ | ---------------------------------------------------- |
 | `ts`         | string | ISO-8601 UTC. Set by the library.                    |
-| `level`      | string | `debug`/`info`/`warn`/`error`. Defaults to `info`.   |
+| `level`      | string | `debug`/`info`/`warn`/`error`. Defaults to `info`; unknown strings normalize to the configured default. |
 | `level_code` | number | `1`–`4` (debug→error). Set by the library.           |
 | `service`    | string | Set by `configure({ service })`. Required.           |
 | `hostname`   | string | OS hostname. Set by the library.                     |
 | `pid`        | number | Process ID. Set by the library.                      |
-| `event`      | string | Caller-provided. Dot-separated kebab.                |
+| `event`      | string | Caller-provided. Dot-separated kebab by convention (e.g. `auth.signin`) — not enforced by the library. |
 
 Suggested optional fields:
 

@@ -104,6 +104,28 @@ def test_log_error_with_extra_fields():
     assert parsed["route"] == "/api/data"
 
 
+def test_unknown_level_normalizes_to_default():
+    """FR-071: unknown level strings must not produce a level/level_code
+    mismatch — both normalize to the configured default."""
+    lines = _capture()
+    log_event("boom", level="bogus")
+    parsed = json.loads(lines[0])
+    assert parsed["level"] == "info"
+    assert parsed["level_code"] == 2
+
+
+def test_log_error_caller_fields_win():
+    """FR-070/FR-085: caller kwargs take precedence over extracted
+    error fields on key collision."""
+    lines = _capture()
+    log_error("api.failed", ValueError("timeout"), error_message="caller override")
+    parsed = json.loads(lines[0])
+    assert parsed["error_message"] == "caller override"
+    assert parsed["error_type"] == "ValueError"
+    assert parsed["event"] == "api.failed"
+    assert parsed["level"] == "error"
+
+
 def test_configure_requires_service():
     with pytest.raises(ValueError, match="service"):
         configure(service="")

@@ -10,7 +10,7 @@ git clone https://github.com/Simmons-Systems/simsys-logevent.git
 cd simsys-logevent/node
 npm ci
 cd ..
-npx pre-commit install   # or: pre-commit install (if installed globally)
+pipx install pre-commit && pre-commit install   # or: pip install --user pre-commit
 ```
 
 ## Running the tests

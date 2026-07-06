@@ -34,7 +34,9 @@ func FuzzLogEvent(f *testing.F) {
 		defer fuzzMu.Unlock()
 
 		var buf bytes.Buffer
-		Configure(ConfigureOpts{Service: "fuzz-svc", Out: &buf})
+		if err := Configure(ConfigureOpts{Service: "fuzz-svc", Out: &buf}); err != nil {
+			t.Fatalf("Configure: %v", err)
+		}
 
 		LogEvent(event, LogLevel(level), F(fieldKey, fieldValue))
 
@@ -59,10 +61,15 @@ func FuzzLogEvent(f *testing.F) {
 		if utf8.ValidString(event) && payload["event"] != event {
 			t.Fatalf("event mismatch: got %v, want %q", payload["event"], event)
 		}
-		// level_code is always one of the known codes (0 for unknown levels
-		// because the map lookup zero-values).
-		if code, ok := payload["level_code"].(float64); !ok || code < 0 || code > 4 {
-			t.Fatalf("level_code out of range: %v", payload["level_code"])
+		// Unknown levels normalize to the configured default (FR-071), so
+		// level is always a known string and level_code always matches it.
+		lvlStr, _ := payload["level"].(string)
+		wantCode, known := map[string]float64{"debug": 1, "info": 2, "warn": 3, "error": 4}[lvlStr]
+		if !known {
+			t.Fatalf("level %q is not a known normalized level", lvlStr)
+		}
+		if code, ok := payload["level_code"].(float64); !ok || code != wantCode {
+			t.Fatalf("level_code = %v, want %v for level %q", payload["level_code"], wantCode, lvlStr)
 		}
 	})
 }
