@@ -35,6 +35,13 @@ describe("logEvent", () => {
     expect(parsed.level).toBe("error");
   });
 
+  it("normalizes unknown level strings to the default (FR-071/FR-075)", () => {
+    logEvent({ event: "boom", level: "bogus" as never });
+    const parsed = JSON.parse(captured[0]);
+    expect(parsed.level).toBe("info");
+    expect(parsed.level_code).toBe(2);
+  });
+
   it("preserves event-specific fields", () => {
     logEvent({
       event: "shift.assigned",
@@ -130,6 +137,18 @@ describe("logError", () => {
     const parsed = JSON.parse(captured[0]);
     expect(parsed.route).toBe("/api/data");
     expect(parsed.user).toBe("bob");
+  });
+
+  it("caller extra fields win over extracted error fields (FR-070/FR-085)", () => {
+    logError("api.failed", new Error("timeout"), {
+      error_message: "caller override",
+    });
+    const parsed = JSON.parse(captured[0]);
+    expect(parsed.error_message).toBe("caller override");
+    expect(parsed.error_type).toBe("Error");
+    // event and level cannot be overridden.
+    expect(parsed.event).toBe("api.failed");
+    expect(parsed.level).toBe("error");
   });
 });
 

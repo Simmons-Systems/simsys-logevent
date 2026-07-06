@@ -11,8 +11,46 @@ import (
 func setup(t *testing.T) *bytes.Buffer {
 	t.Helper()
 	var buf bytes.Buffer
-	Configure(ConfigureOpts{Service: "test-svc", Out: &buf})
+	if err := Configure(ConfigureOpts{Service: "test-svc", Out: &buf}); err != nil {
+		t.Fatalf("Configure: %v", err)
+	}
 	return &buf
+}
+
+func TestConfigureRejectsEmptyService(t *testing.T) {
+	if err := Configure(ConfigureOpts{Service: ""}); err == nil {
+		t.Fatal("Configure with empty Service: expected error, got nil")
+	}
+}
+
+func TestUnknownLevelNormalizesToDefault(t *testing.T) {
+	buf := setup(t)
+	LogEvent("demo.event", LogLevel("bogus"))
+	var parsed map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &parsed); err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if parsed["level"] != "info" {
+		t.Errorf("level = %v, want info (normalized default)", parsed["level"])
+	}
+	if parsed["level_code"] != float64(2) {
+		t.Errorf("level_code = %v, want 2", parsed["level_code"])
+	}
+}
+
+func TestLogErrorCallerFieldsWin(t *testing.T) {
+	buf := setup(t)
+	LogError("db.fail", errors.New("boom"), F("error_message", "caller override"))
+	var parsed map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &parsed); err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if parsed["error_message"] != "caller override" {
+		t.Errorf("error_message = %v, want caller override", parsed["error_message"])
+	}
+	if parsed["error_type"] != "*errors.errorString" {
+		t.Errorf("error_type = %v, want *errors.errorString", parsed["error_type"])
+	}
 }
 
 func TestEmitsOneJSONLine(t *testing.T) {
@@ -131,10 +169,12 @@ func TestGetService(t *testing.T) {
 
 func TestLogEvent_NoSpoofing(t *testing.T) {
 	var buf bytes.Buffer
-	Configure(ConfigureOpts{
+	if err := Configure(ConfigureOpts{
 		Service: "test-service",
 		Out:     &buf,
-	})
+	}); err != nil {
+		t.Fatalf("Configure: %v", err)
+	}
 
 	LogEvent("auth.signin", Info, F("service", "hacker"), F("pid", 999), F("event", "spoofed"))
 

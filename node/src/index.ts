@@ -112,12 +112,18 @@ export function logEvent(payload: LogEventPayload): void {
     return;
   }
   try {
-    const level = payload.level || config.defaultLevel;
+    // Unknown level strings previously produced a level/level_code
+    // mismatch (level kept the bogus string, level_code fell back to the
+    // default's code). Normalize both to the configured default so the
+    // pair always agrees (FR-071/FR-075).
+    const requested = payload.level || config.defaultLevel;
+    const level: LogLevel =
+      requested in LEVEL_CODES ? (requested as LogLevel) : config.defaultLevel;
     const line = JSON.stringify({
       ...payload,
       ts: new Date().toISOString(),
       level,
-      level_code: LEVEL_CODES[level] ?? LEVEL_CODES[config.defaultLevel],
+      level_code: LEVEL_CODES[level],
       service: config.service,
       hostname: config.hostname,
       pid: config.pid,
@@ -133,27 +139,32 @@ export function logEvent(payload: LogEventPayload): void {
 /**
  * Convenience wrapper for error events. Extracts error_type, error_message,
  * and stack from the Error object and emits at level "error".
+ *
+ * Caller-supplied `extra` fields take precedence over the extracted error
+ * fields on key collision (previously the extraction silently overwrote
+ * them — FR-070/FR-085). `event` and `level` cannot be overridden.
  */
 export function logError(
   event: string,
   error: unknown,
-  extra?: Omit<LogEventPayload, "event" | "level" | "error_type" | "error_message" | "stack">,
+  extra?: Omit<LogEventPayload, "event" | "level">,
 ): void {
-  const fields: LogEventPayload = {
-    event,
-    level: "error",
-    ...extra,
-  };
+  const errorFields: Partial<LogEventPayload> = {};
   if (error instanceof Error) {
-    fields.error_type = error.constructor.name;
-    fields.error_message = error.message;
+    errorFields.error_type = error.constructor.name;
+    errorFields.error_message = error.message;
     if (error.stack) {
-      fields.stack = error.stack;
+      errorFields.stack = error.stack;
     }
   } else if (error != null) {
-    fields.error_message = String(error);
+    errorFields.error_message = String(error);
   }
-  logEvent(fields);
+  logEvent({
+    ...errorFields,
+    ...extra,
+    event,
+    level: "error",
+  });
 }
 
 /** For tests / advanced consumers — expose current service name. */

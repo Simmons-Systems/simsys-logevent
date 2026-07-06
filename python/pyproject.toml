@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "simsys-logevent"
+version = "0.1.0"
+description = "Structured log events for Python apps — JSON-per-line to stdout for systemd-journal → Loki pipelines."
+readme = { text = "Python SDK of simsys-logevent. See the repository README for full documentation.", content-type = "text/markdown" }
+license = { text = "MIT" }
+authors = [{ name = "Simmons Systems" }]
+requires-python = ">=3.10"
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/Simmons-Systems/simsys-logevent"
+
+[project.optional-dependencies]
+test = ["pytest>=7.4"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["simsys_logevent"]
