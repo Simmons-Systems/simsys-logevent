@@ -30,6 +30,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI: Python test workflow added** (pytest, 3.10 floor + 3.13
   lanes) — completes SDK CI coverage alongside the Go workflow
   (FR-090).
+- Docs: README event-naming row now documents the dot-separated
+  convention as convention-not-enforced (FR-091); CONTRIBUTING
+  pre-commit install instructions fixed — Python tooling, not npx
+  (FR-092).
+
+## [0.2.0] - 2026-07-05 (`node-v0.2.0`)
+
+### Added
+
+- **Node: `level_code`, `hostname`, and `pid` auto-populated on every
+  event** (#15) — `level_code` is an integer level mapping (debug=1,
+  info=2, warn=3, error=4) for faster numeric filtering in LogQL;
+  `hostname` and `pid` identify the emitting host and process in
+  multi-host/multi-process deployments.
+- **Node: `logError(event, error, extra?)` convenience helper** (#15) —
+  extracts `error_type`, `error_message`, and `stack` from `Error`
+  objects; those enrichment fields are documented as suggested optional
+  fields on `LogEventPayload`.
+- **Python SDK** (`python/simsys_logevent/`): `configure()`,
+  `log_event()`, `log_error()`, `get_service()` (#16). Same minimal
+  philosophy as Node — structured JSON to stdout, no transports,
+  batching, or sampling — with the same auto-populated fields and a
+  never-throws contract.
+- **Go SDK** (`go/`): `Configure()`, `LogEvent()`, `LogError()`,
+  `GetService()`, and the `F()` field builder (#16). Same auto-populated
+  fields and a never-panics contract.
+- CI/security: CodeQL workflow added; Go CI workflow (go vet + race
+  tests + fuzz smoke) with a native `FuzzLogEvent` fuzz target;
+  Scorecard workflow findings resolved (#34).
+
+### Changed
+
 - **Node: engines floor raised `node>=18` → `node>=20`; package version
   `0.1.1` → `0.2.0`.** Node 18 has been EOL since April 2025, and the dev
   toolchain (vitest@4) already required Node 20+. CI's Node 20 matrix lane
@@ -39,6 +71,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docs: README and CONTRIBUTING updated for the Python and Go SDKs and
   the auto-populated `level_code`/`hostname`/`pid` fields; stale
   pre-transfer links fixed.
+
+### Security
+
+- **Log-spoofing fix across all three SDKs** (a0d4b87, #30): the
+  reserved envelope fields (`ts`, `level`, `level_code`, `service`,
+  `hostname`, `pid`, `event`) are now stamped *after* caller-supplied
+  extras are merged, so caller fields can no longer override system
+  metadata and forge log lines. Consumers pick up this hardening by
+  upgrading to this release's tarball.
 
 ## [0.1.1] - 2026-04-29 (`node-v0.1.1`)
 
@@ -71,6 +112,7 @@ Initial release. Node-only.
   `out` override behaviour.
 - GitHub release tarball distribution (no npm registry).
 
-[Unreleased]: https://github.com/Simmons-Systems/simsys-logevent/compare/node-v0.1.1...HEAD
+[Unreleased]: https://github.com/Simmons-Systems/simsys-logevent/compare/node-v0.2.0...HEAD
+[0.2.0]: https://github.com/Simmons-Systems/simsys-logevent/releases/tag/node-v0.2.0
 [0.1.1]: https://github.com/Simmons-Systems/simsys-logevent/releases/tag/node-v0.1.1
 [0.1.0]: https://github.com/Simmons-Systems/simsys-logevent/releases/tag/node-v0.1.0
