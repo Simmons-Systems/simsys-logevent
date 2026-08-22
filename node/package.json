@@ -1,6 +1,6 @@
 {
   "name": "@simsys/logevent",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "Structured JSON log events for Node.js — drop-in stdout writer for systemd-journal → Loki pipelines",
   "license": "MIT",
   "author": "Avicennasis",
@@ -12,6 +12,9 @@
   "homepage": "https://github.com/Simmons-Systems/simsys-logevent#readme",
   "bugs": {
     "url": "https://github.com/Simmons-Systems/simsys-logevent/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
