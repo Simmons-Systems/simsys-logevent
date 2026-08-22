@@ -52,10 +52,20 @@ def configure(
     out: Optional[Callable[[str], Any]] = None,
 ) -> None:
     global _service, _default_level, _out
-    if not service or not isinstance(service, str):
+    if not isinstance(service, str) or not service.strip():
         raise ValueError("configure() requires a non-empty service string.")
+    # An unvalidated default is worse here than in any other SDK: log_event's
+    # fallback normalizes an unknown level *to the default*, a no-op when the
+    # default is itself invalid, so _LEVEL_CODES[lvl] raises KeyError inside
+    # the never-throw guard and the event vanishes with no trace at all.
+    # Reject it at startup, where it is diagnosable.
+    if default_level not in _LEVEL_CODES:
+        raise ValueError(
+            "configure() requires default_level to be one of: "
+            + ", ".join(_LEVEL_CODES)
+        )
     with _CONFIG_LOCK:
-        _service = service
+        _service = service.strip()
         _default_level = default_level
         if out is not None:
             _out = out

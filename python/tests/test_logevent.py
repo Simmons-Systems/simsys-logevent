@@ -131,6 +131,21 @@ def test_configure_requires_service():
         configure(service="")
 
 
+def test_configure_rejects_whitespace_service():
+    with pytest.raises(ValueError, match="service"):
+        configure(service="   ")
+
+
+def test_configure_trims_service():
+    configure(service="  spaced  ", out=lambda line: None)
+    assert get_service() == "spaced"
+
+
+def test_configure_rejects_invalid_default_level():
+    with pytest.raises(ValueError, match="default_level"):
+        configure(service="svc", default_level="bogus")
+
+
 def test_get_service():
     _capture()
     assert get_service() == "test-svc"

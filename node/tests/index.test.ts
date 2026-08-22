@@ -163,6 +163,22 @@ describe("configure", () => {
     expect(() => configure({ service: 123 })).toThrow(/service/);
   });
 
+  it("rejects a whitespace-only service", () => {
+    expect(() => configure({ service: "   " })).toThrow(/service/);
+  });
+
+  it("trims surrounding whitespace from service", () => {
+    configure({ service: "  spaced  ", out: () => {} });
+    expect(getService()).toBe("spaced");
+  });
+
+  it("rejects an invalid defaultLevel", () => {
+    expect(() =>
+      // @ts-expect-error — testing runtime guard
+      configure({ service: "svc", defaultLevel: "bogus" }),
+    ).toThrow(/defaultLevel/);
+  });
+
   it("getService reflects last configure call", () => {
     configure({ service: "alpha", out: () => {} });
     expect(getService()).toBe("alpha");

@@ -23,6 +23,29 @@ func TestConfigureRejectsEmptyService(t *testing.T) {
 	}
 }
 
+func TestConfigureRejectsWhitespaceService(t *testing.T) {
+	if err := Configure(ConfigureOpts{Service: "   "}); err == nil {
+		t.Fatal("Configure with whitespace-only Service: expected error, got nil")
+	}
+}
+
+func TestConfigureTrimsService(t *testing.T) {
+	var buf bytes.Buffer
+	if err := Configure(ConfigureOpts{Service: "  spaced  ", Out: &buf}); err != nil {
+		t.Fatalf("Configure: %v", err)
+	}
+	if got := GetService(); got != "spaced" {
+		t.Fatalf("GetService() = %q, want %q", got, "spaced")
+	}
+}
+
+func TestConfigureRejectsInvalidDefaultLevel(t *testing.T) {
+	err := Configure(ConfigureOpts{Service: "test-svc", DefaultLevel: LogLevel("bogus")})
+	if err == nil {
+		t.Fatal("Configure with invalid DefaultLevel: expected error, got nil")
+	}
+}
+
 func TestUnknownLevelNormalizesToDefault(t *testing.T) {
 	buf := setup(t)
 	LogEvent("demo.event", LogLevel("bogus"))
