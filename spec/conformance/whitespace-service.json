@@ -1,0 +1,10 @@
+{
+  "name": "whitespace-service",
+  "description": "A whitespace-only service is rejected rather than becoming a legitimate service identity.",
+  "configure": {
+    "service": "   "
+  },
+  "expect": {
+    "configure_error": true
+  }
+}

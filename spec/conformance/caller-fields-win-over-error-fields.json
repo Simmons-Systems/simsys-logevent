@@ -1,0 +1,22 @@
+{
+  "name": "caller-fields-win-over-error-fields",
+  "description": "On key collision, caller-supplied fields beat fields extracted from the error object (FR-070/FR-085).",
+  "configure": {
+    "service": "test-svc"
+  },
+  "call": {
+    "fn": "logError",
+    "event": "db.query.failed",
+    "error_message": "boom",
+    "fields": {
+      "error_message": "caller-supplied"
+    }
+  },
+  "expect": {
+    "emitted": true,
+    "fields": {
+      "error_message": "caller-supplied",
+      "level": "error"
+    }
+  }
+}

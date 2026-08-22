@@ -1,0 +1,11 @@
+{
+  "name": "invalid-configured-default",
+  "description": "An invalid CONFIGURED DEFAULT is a configuration error, not a normalized event. The per-event fallback is a no-op when the default is itself invalid, which previously produced three different broken outputs (Node dropped level_code, Python silently vanished the whole event, Go emitted level_code 0).",
+  "configure": {
+    "service": "test-svc",
+    "defaultLevel": "bogus"
+  },
+  "expect": {
+    "configure_error": true
+  }
+}

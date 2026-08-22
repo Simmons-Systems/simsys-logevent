@@ -1,0 +1,34 @@
+{
+  "name": "reserved-field-spoof",
+  "description": "Reserved envelope fields are stamped AFTER caller fields, so a payload cannot forge system metadata. This is the log-spoofing fix from 0.2.0 and must never regress. NOTE: `level` is deliberately absent from this payload — it is a documented caller input, not a library-owned field, so setting it is legitimate rather than spoofing. `level_code` IS library-owned: it is always derived from the resolved level and can never be set by the caller.",
+  "configure": {
+    "service": "real-svc"
+  },
+  "call": {
+    "fn": "logEvent",
+    "event": "spoof.attempt",
+    "fields": {
+      "service": "fake-svc",
+      "level_code": 99,
+      "hostname": "fake-host",
+      "pid": 1,
+      "ts": "1999-01-01T00:00:00Z"
+    }
+  },
+  "expect": {
+    "emitted": true,
+    "fields": {
+      "event": "spoof.attempt",
+      "service": "real-svc",
+      "level": "info",
+      "level_code": 2
+    },
+    "not_fields": {
+      "service": "fake-svc",
+      "level_code": 99,
+      "hostname": "fake-host",
+      "pid": 1,
+      "ts": "1999-01-01T00:00:00Z"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "unknown-event-level",
+  "description": "An invalid PER-EVENT level is not an error: it normalizes to the configured default so a bad level never costs the log line. level and level_code must always agree.",
+  "configure": {
+    "service": "test-svc",
+    "defaultLevel": "warn"
+  },
+  "call": {
+    "fn": "logEvent",
+    "event": "demo.event",
+    "level": "bogus",
+    "fields": {}
+  },
+  "expect": {
+    "emitted": true,
+    "fields": {
+      "level": "warn",
+      "level_code": 3
+    }
+  }
+}
