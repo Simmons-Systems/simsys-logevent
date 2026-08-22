@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+This repo ships **three SDK lanes that release independently**, so a
+release heading names the lane it belongs to. Tags:
+
+| Lane | Tag form | Notes |
+|---|---|---|
+| Node | `node-v1.2.3` | triggers `release.yml`; consumers pin the tarball URL |
+| Go | `go/v1.2.3` | **mandated** by Go tooling for a subdirectory module — the tag *is* the release |
+| Python | `python/v1.2.3` | matches the Go shape |
+
+An entry under `[Unreleased]` means unreleased **for the lanes it names**.
+A change can be released in one lane and pending in another; say which.
+
 ## [Unreleased]
 
 ### Fixed
@@ -31,19 +43,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Cross-SDK: unknown level strings normalize to the configured
-  default level** in Node, Python, and Go, eliminating the
-  level/level_code mismatch (FR-071/FR-075).
+  default level**, eliminating the level/level_code mismatch
+  (FR-071/FR-075). Unreleased for **Node and Python**; the Go half
+  already shipped in `go/v0.1.0`.
 - **Cross-SDK: `logError`/`log_error`/`LogError` caller-supplied
   fields now take precedence over extracted error fields** on key
   collision — previously Node and Python silently overwrote them
   (FR-070/FR-085). Go already behaved this way; now documented.
-- **Node: version 0.3.0** (behavior changes above).
-- **Go: `Configure` returns an error** instead of panicking on empty
-  service, matching Node/Python (FR-076/FR-086). `LogEvent`'s panic
-  recovery now writes a best-effort diagnostic to stderr instead of
-  swallowing silently (FR-072). `captureStack` grows its buffer
-  (4 KiB → up to 256 KiB) instead of silently truncating deep stacks
-  (FR-087). `errorType` helper inlined (FR-089).
+- **All three lanes aligned at `1.0.0`.** Node `0.3.0 → 1.0.0` (0.3.0 was
+  never released), Python `0.1.0 → 1.0.0`, and the Go lane will be tagged
+  `go/v1.0.0`. Versioning is now lockstep so the version number means the
+  *contract* version: `logevent 1.0` is one contract with three
+  implementations. A lane may ship a no-op release to stay aligned.
+- **Packaging: both publishable lanes now carry their own README and
+  LICENSE.** `node/package.json` listed `README.md` and `LICENSE` in
+  `files`, but neither existed under `node/`, so the tarball shipped
+  without them and an npm page would have rendered empty; Python's
+  `readme` was an inline one-sentence stub with the same effect on PyPI.
+  Added `node/README.md`, `python/README.md`, and a copy of the MIT
+  `LICENSE` in both. Verified with `npm pack --dry-run` (8 files, both
+  present) and `twine check` (both artifacts PASSED).
+- **Packaging: `publishConfig.access = "public"`** added to
+  `node/package.json` — a scoped package defaults to restricted and would
+  otherwise fail to publish publicly. Python metadata gained classifiers,
+  keywords, and Repository/Issues/Changelog URLs.
+- **CI: CodeQL now scans application source.** The matrix was
+  `language: [actions]`, which analyses workflow YAML and none of the
+  JS/TS, Python, or Go this package ships — so CodeQL reported green
+  while covering zero library code. Now scans `javascript-typescript`,
+  `python`, and `go` alongside `actions`.
 - **Python: `configure()`/`log_event()` state is lock-guarded**
   (FR-073); `log_error`'s `error` parameter annotation widened to
   `Any` to match its documented accept-anything behavior (FR-088);
@@ -55,6 +83,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   convention as convention-not-enforced (FR-091); CONTRIBUTING
   pre-commit install instructions fixed — Python tooling, not npx
   (FR-092).
+
+## [go/v0.1.0] - 2026-08-11
+
+First tagged release of the Go lane. These changes were previously
+listed as unreleased; the tag is byte-identical to the Go source on
+`main`, so they have been in consumers' hands since 2026-08-11.
+
+### Changed
+
+- **`Configure` returns an error** instead of panicking on an empty
+  service, matching Node/Python (FR-076/FR-086).
+- **`LogEvent` panic recovery writes a best-effort diagnostic to
+  stderr** instead of swallowing silently (FR-072).
+- **`captureStack` grows its buffer** (4 KiB → up to 256 KiB) instead of
+  silently truncating deep stacks (FR-087).
+- **Unknown level strings normalize to the configured default level**
+  (FR-071) — the Go half of the cross-SDK change still pending for
+  Node and Python.
+- `errorType` helper inlined (FR-089).
 
 ## [0.2.0] - 2026-07-05 (`node-v0.2.0`)
 
