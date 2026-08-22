@@ -40,6 +40,17 @@ A change can be released in one lane and pending in another; say which.
   every SDK's emptiness check and became a legitimate service identity;
   untrimmed names also split one service across two values in Loki.
 
+### Added
+
+- **Cross-SDK conformance fixtures** (`spec/conformance/*.json`) — 11
+  language-neutral test vectors run by all three lanes, so a behavior
+  that drifts in one lane fails there instead of surfacing later in
+  Loki. Proven to discriminate: against the pre-fix sources they fail
+  exactly four cases, the same four in every lane. The README documents
+  the schema and the behaviors that are *deliberately* unpinned because
+  they genuinely differ per language (unserializable-value handling,
+  `ts` precision of ms/µs/ns).
+
 ### Changed
 
 - **Cross-SDK: unknown level strings normalize to the configured

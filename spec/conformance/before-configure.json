@@ -1,0 +1,18 @@
+{
+  "name": "before-configure",
+  "description": "Logging before configure() emits normally with service 'unknown' rather than failing. Deliberate safety fallback: a misconfigured bootstrap is exactly when logs matter most. {service=\"unknown\"} in Loki is a bug signal, not a normal state.",
+  "configure": null,
+  "call": {
+    "fn": "logEvent",
+    "event": "early.event",
+    "fields": {}
+  },
+  "expect": {
+    "emitted": true,
+    "fields": {
+      "service": "unknown",
+      "level": "info",
+      "level_code": 2
+    }
+  }
+}

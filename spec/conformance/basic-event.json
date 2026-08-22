@@ -1,0 +1,29 @@
+{
+  "name": "basic-event",
+  "description": "A plain event carries the full envelope with the default level.",
+  "configure": {
+    "service": "test-svc"
+  },
+  "call": {
+    "fn": "logEvent",
+    "event": "demo.event",
+    "fields": {
+      "outcome": "success"
+    }
+  },
+  "expect": {
+    "emitted": true,
+    "fields": {
+      "event": "demo.event",
+      "level": "info",
+      "level_code": 2,
+      "service": "test-svc",
+      "outcome": "success"
+    },
+    "present": [
+      "ts",
+      "hostname",
+      "pid"
+    ]
+  }
+}

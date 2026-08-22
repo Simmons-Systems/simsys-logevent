@@ -1,0 +1,28 @@
+{
+  "name": "error-event",
+  "description": "logError emits at level error and extracts a message. error_type is language-specific (Node 'Error', Python 'ValueError', Go '*errors.errorString') and is therefore asserted as present-only, not by value.",
+  "configure": {
+    "service": "test-svc"
+  },
+  "call": {
+    "fn": "logError",
+    "event": "db.query.failed",
+    "error_message": "boom",
+    "fields": {
+      "route": "/api/shifts"
+    }
+  },
+  "expect": {
+    "emitted": true,
+    "fields": {
+      "event": "db.query.failed",
+      "level": "error",
+      "level_code": 4,
+      "error_message": "boom",
+      "route": "/api/shifts"
+    },
+    "present": [
+      "error_type"
+    ]
+  }
+}
