@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **BREAKING — Cross-SDK: `configure()` now validates the configured
+  default level.** Previously only the per-event level was checked, and
+  the "unknown level falls back to the configured default" normalization
+  is a no-op when the default is *itself* invalid — so an invalid
+  configured default reached the emitter and produced three different
+  broken outputs: Node emitted `level:"bogus"` with the `level_code` key
+  dropped entirely (`JSON.stringify` omits `undefined`), Python raised
+  `KeyError` inside the never-throw guard so the **entire event silently
+  vanished**, and Go emitted `level:"bogus"` with `level_code: 0`.
+  `configure()` now rejects an invalid default at startup using each
+  SDK's existing convention (Node throws, Python raises `ValueError`,
+  Go returns an error), reusing the existing level tables as the oracle
+  so there is no second list to drift. No state is mutated when
+  configuration is rejected.
+- **BREAKING — Cross-SDK: whitespace-only service names are rejected,
+  and the service name is stored trimmed.** `"   "` previously passed
+  every SDK's emptiness check and became a legitimate service identity;
+  untrimmed names also split one service across two values in Loki.
+
 ### Changed
 
 - **Cross-SDK: unknown level strings normalize to the configured

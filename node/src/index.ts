@@ -85,10 +85,22 @@ export interface ConfigureOpts {
  * (instrumentation.ts, server.js entry, etc.).
  */
 export function configure(opts: ConfigureOpts): void {
-  if (!opts.service || typeof opts.service !== "string") {
+  const service =
+    typeof opts?.service === "string" ? opts.service.trim() : "";
+  if (!service) {
     throw new Error("configure(): opts.service must be a non-empty string.");
   }
-  config.service = opts.service;
+  // An unvalidated default is worse than an unvalidated event level: the
+  // per-event fallback below normalizes an unknown level *to the default*,
+  // which is a no-op when the default is itself invalid. Node then emits a
+  // bogus level with level_code dropped entirely (JSON.stringify omits
+  // undefined). Reject it here, at startup, where it is diagnosable.
+  if (opts.defaultLevel !== undefined && !(opts.defaultLevel in LEVEL_CODES)) {
+    throw new Error(
+      `configure(): opts.defaultLevel must be one of ${Object.keys(LEVEL_CODES).join(", ")}.`,
+    );
+  }
+  config.service = service;
   if (opts.defaultLevel) {
     config.defaultLevel = opts.defaultLevel;
   }

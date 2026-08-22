@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 )
@@ -48,16 +49,28 @@ func init() {
 
 // Configure sets the module-level state. Typically called once at startup.
 //
-// Returns an error when Service is empty — matching the Node and Python
-// SDKs, which reject an empty service without crashing the process.
+// Returns an error when Service is empty or whitespace-only, or when
+// DefaultLevel is set to something outside debug/info/warn/error — matching
+// the Node and Python SDKs, which reject both without crashing the process.
+// Service is stored trimmed. No state is mutated when an error is returned.
 // (Changed from panicking; see ticket FR-076/FR-086.)
 func Configure(opts ConfigureOpts) error {
-	if opts.Service == "" {
+	svc := strings.TrimSpace(opts.Service)
+	if svc == "" {
 		return fmt.Errorf("logevent.Configure: Service must be non-empty")
+	}
+	// LogEvent normalizes an unknown level *to the default*, which is a no-op
+	// when the default is itself invalid — the event then carries a bogus
+	// level with level_code 0 (the map zero value). Reject it at startup,
+	// before any state is mutated, where it is diagnosable.
+	if opts.DefaultLevel != "" {
+		if _, ok := levelCodes[opts.DefaultLevel]; !ok {
+			return fmt.Errorf("logevent.Configure: DefaultLevel %q is not a valid level", opts.DefaultLevel)
+		}
 	}
 	mu.Lock()
 	defer mu.Unlock()
-	service = opts.Service
+	service = svc
 	if opts.DefaultLevel != "" {
 		defaultLevel = opts.DefaultLevel
 	}
