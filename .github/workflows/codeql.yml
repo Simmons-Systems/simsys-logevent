@@ -15,7 +15,13 @@ permissions:
 
 jobs:
   analyze:
-    name: Analyze
+    # Pinned explicitly. GitHub derives an unnamed matrix job's title from
+    # ALL its matrix keys, so adding `build-mode` silently renamed this job
+    # from "Analyze (actions)" to "Analyze (actions, none)" — and
+    # "Analyze (actions)" is the one required status check on main, so the
+    # gate became unsatisfiable rather than failing loudly. Keep this name
+    # keyed on language alone; changing it breaks the branch ruleset.
+    name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
     permissions:
       security-events: write
