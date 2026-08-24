@@ -19,6 +19,24 @@ A change can be released in one lane and pending in another; say which.
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [1.0.0] - 2026-08-24 (`node-v1.0.0`, `python/v1.0.0`, `go/v1.0.0`)
+
+First lockstep release across all three lanes, so the version number now
+means the *contract* version rather than one SDK's.
+
+**Registry status at this release:**
+
+- **PyPI** — `simsys-logevent` 1.0.0 published via Trusted Publishing (OIDC),
+  wheel + sdist, with build-provenance attestation.
+- **Go** — `go/v1.0.0`, fetchable by module path through the proxy. At v1 the
+  path needs no suffix; a future v2 requires `.../go/v2`.
+- **npm** — **not published.** `@simsys/logevent` remains unclaimed on the
+  registry; the release tarball ships as a GitHub asset as before, which is
+  what the ten existing consumers pin. The publish step skips itself while no
+  `NPM_TOKEN` secret exists.
+
 ### Fixed
 
 - **BREAKING — Cross-SDK: `configure()` now validates the configured
