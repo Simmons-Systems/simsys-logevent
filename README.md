@@ -23,7 +23,7 @@ handle querying.
 ```json
 {
   "dependencies": {
-    "@simsys/logevent": "https://github.com/Simmons-Systems/simsys-logevent/releases/download/node-v0.2.0/simsys-logevent-0.2.0.tgz"
+    "@simsys/logevent": "https://github.com/Simmons-Systems/simsys-logevent/releases/download/node-v1.0.0/simsys-logevent-1.0.0.tgz"
   }
 }
 ```
