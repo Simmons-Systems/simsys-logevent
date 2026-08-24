@@ -1,17 +1,35 @@
 name: Release
 
+# Per-language release lanes, routed by tag prefix. Until 2026-08-24 this
+# workflow triggered on `node-v*` ONLY, so a `python/v*` or `go/v*` tag push
+# ran nothing at all and produced no release -- the Go lane's `go/v0.1.0` tag
+# exists with no release behind it for exactly that reason (Redmine #50412).
+#
+# The prefixes are the ones the CHANGELOG's tag table mandates, and they are
+# deliberately NOT identical to simsys-metrics': Python here is `python/v*`,
+# matching the Go shape, where metrics uses `python-v*`. Go's `go/vX.Y.Z` is
+# not a style choice -- Go tooling mandates it for a module in a subdirectory.
+#
+# workflow_dispatch is the retro-run lane: dispatch at a tag ref
+# (e.g. `gh workflow run release.yml --ref python/v1.0.0`) to build artifacts
+# for a tag pushed before this fix. Jobs gate on the ref name prefix, so
+# dispatching from a branch ref runs nothing.
+
 on:
   push:
     tags:
       - "node-v*"
+      - "python/v*"
+      - "go/v*"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  build-and-attest:
-    name: Build tarball, attest, release
+  node-release:
+    name: "Node: pack tarball, attest, release"
+    if: startsWith(github.ref_name, 'node-v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -30,6 +48,13 @@ jobs:
           node-version: "24"
           cache: npm
           cache-dependency-path: node/package-lock.json
+          # REQUIRED for `npm publish` to authenticate. Setting NODE_AUTH_TOKEN
+          # alone does nothing: npm reads its credential from an .npmrc, and
+          # this input is what makes setup-node WRITE that .npmrc with an
+          # ${NODE_AUTH_TOKEN} placeholder. Without it the env var is simply
+          # ignored and publish fails ENEEDAUTH -- indistinguishable from a
+          # missing or invalid token.
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies (locked)
         run: npm ci
@@ -40,16 +65,107 @@ jobs:
       - name: Run vitest
         run: npm test
 
-      - name: Pack tarball
-        run: npm pack
+      # Pack into runner.temp so the glob below can never pick up a stray
+      # in-tree tarball. npm names the scoped package
+      # `simsys-logevent-<version>.tgz` -- the README install URL shape.
+      - name: Pack release tarball
+        run: npm pack --pack-destination "$RUNNER_TEMP"
 
       - name: Generate build provenance attestation
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
-          subject-path: "node/*.tgz"
+          subject-path: "${{ runner.temp }}/simsys-logevent-*.tgz"
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           generate_release_notes: true
-          files: "node/*.tgz"
+          files: ${{ runner.temp }}/simsys-logevent-*.tgz
+
+      # Ordered AFTER the GitHub release deliberately. Ten existing consumers
+      # (9 BFR repos + avic/stargazer) pin the .tgz asset URL directly, so
+      # registry publication must be purely additive -- if npm is down or the
+      # token lapses, the tarball those consumers depend on must still ship.
+      # Publishing first would make the release hostage to the registry.
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  python-release:
+    name: "Python: build wheel + sdist, attest, release"
+    if: startsWith(github.ref_name, 'python/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    defaults:
+      run:
+        working-directory: python
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Build wheel and sdist
+        run: |
+          python -m pip install --require-hashes -r ../.github/requirements/build.txt
+          python -m build
+
+      - name: Generate build provenance attestation
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-path: "python/dist/*"
+
+      # Sanity-check the artifacts BEFORE anything irreversible. A PyPI
+      # version number can never be reused, so a malformed sdist discovered
+      # after upload costs a version rather than a retry.
+      - name: Validate distributions
+        run: python -m twine check --strict dist/*
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
+        with:
+          generate_release_notes: true
+          files: python/dist/*
+
+      - name: Publish to PyPI
+        # Trusted Publishing (OIDC) -- no long-lived token in secrets. The
+        # id-token: write permission this job already declares is what
+        # authenticates; PyPI must have a matching publisher configured for
+        # this repo + workflow filename + environment. For a project that has
+        # never been published, that means a PENDING publisher created at
+        # pypi.org/manage/account/publishing/ before the first tag is pushed.
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          packages-dir: python/dist
+
+  go-release:
+    # Go consumers fetch the module by tag via the module proxy -- no build
+    # artifacts to attach. This lane just publishes the GitHub release with
+    # generated notes for parity with the other lanes.
+    #
+    # At v1 the module path needs no suffix, so
+    # `github.com/Simmons-Systems/simsys-logevent/go` is correct as-is. A
+    # future v2 requires the path itself to become `.../go/v2` -- the tag
+    # alone is not enough.
+    name: "Go: create release (module fetched by tag)"
+    if: startsWith(github.ref_name, 'go/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
+        with:
+          generate_release_notes: true
