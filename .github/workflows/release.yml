@@ -38,6 +38,10 @@ jobs:
     defaults:
       run:
         working-directory: node
+    env:
+      # Job-level so the publish step can gate on `env.NODE_AUTH_TOKEN != ''`.
+      # Empty when the secret does not exist, which is the current state.
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -87,10 +91,20 @@ jobs:
       # registry publication must be purely additive -- if npm is down or the
       # token lapses, the tarball those consumers depend on must still ship.
       # Publishing first would make the release hostage to the registry.
+      #
+      # SKIPPED when NPM_TOKEN is absent, which is the state this repo is in:
+      # npm publication was deliberately deferred at 1.0.0 while PyPI and Go
+      # went ahead. Without this guard the step fails ENEEDAUTH on every
+      # release, leaving a permanently red run that says "something broke"
+      # when the truth is "this lane is intentionally off" -- and a release
+      # workflow nobody trusts to be green is one nobody reads.
+      #
+      # The token is mapped to env at job level rather than tested directly as
+      # `secrets.NPM_TOKEN`, because the secrets context is not dependable in
+      # a step-level `if:`. env is.
       - name: Publish to npm
+        if: env.NODE_AUTH_TOKEN != ''
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   python-release:
     name: "Python: build wheel + sdist, attest, release"
