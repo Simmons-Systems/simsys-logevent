@@ -32,10 +32,14 @@ means the *contract* version rather than one SDK's.
   wheel + sdist, with build-provenance attestation.
 - **Go** — `go/v1.0.0`, fetchable by module path through the proxy. At v1 the
   path needs no suffix; a future v2 requires `.../go/v2`.
-- **npm** — **not published.** `@simsys/logevent` remains unclaimed on the
-  registry; the release tarball ships as a GitHub asset as before, which is
-  what the ten existing consumers pin. The publish step skips itself while no
-  `NPM_TOKEN` secret exists.
+- **npm** — published as [`@simsys/logevent`](https://www.npmjs.com/package/@simsys/logevent),
+  public access, with a signed provenance statement in the Sigstore
+  transparency log. Published on 2026-08-25, three days after the other two
+  lanes: the `NPM_TOKEN` secret did not exist at tag time, so the release
+  workflow's npm step correctly skipped itself rather than failing, and the
+  lane was completed by re-running `release.yml` at the `node-v1.0.0` tag once
+  the token was in place. The GitHub release tarball still ships unchanged,
+  which is what the ten existing consumers pin.
 
 ### Fixed
 
