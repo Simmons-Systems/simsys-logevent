@@ -19,7 +19,18 @@ A change can be released in one lane and pending in another; say which.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Fixed
+
+- **Docs:** the README's Install section was stale on all three lanes. It said
+  the Node package was "not yet on the npm registry" and the Python package
+  "not yet on PyPI", pointed Node users at a release-tarball URL and Python
+  users at a `git+https` subdirectory install, and pinned the superseded
+  `go/v0.1.0` tag. Both packages have been on their public indexes since
+  2026-08-25 — `@simsys/logevent` 1.0.0 on npm with a SLSA build-provenance
+  attestation, `simsys-logevent` 1.0.0 on PyPI. Install instructions now match
+  what is published, and the section says explicitly to pin the registry rather
+  than the tarball URL: a tarball pin cannot be resolved on a host with npm's
+  `allow-remote = "none"`, which is the case on the development workstation.
 
 ## [1.0.0] - 2026-08-24 (`node-v1.0.0`, `python/v1.0.0`, `go/v1.0.0`)
 

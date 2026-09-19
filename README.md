@@ -18,33 +18,35 @@ handle querying.
 
 ## Install
 
-**Node** — pin to a release artifact (not yet on the npm registry):
+All three lanes are on public package indexes.
 
-```json
-{
-  "dependencies": {
-    "@simsys/logevent": "https://github.com/Simmons-Systems/simsys-logevent/releases/download/node-v1.0.0/simsys-logevent-1.0.0.tgz"
-  }
-}
+**Node** — from the npm registry:
+
+```bash
+npm install @simsys/logevent
+```
+
+Published with a SLSA build-provenance attestation; verify it with
+`npm audit signatures`.
+
+**Python** — from PyPI:
+
+```bash
+pip install simsys-logevent
 ```
 
 **Go** — consumable directly by module path; the tag is the release:
 
 ```bash
-go get github.com/Simmons-Systems/simsys-logevent/go@v0.1.0
+go get github.com/Simmons-Systems/simsys-logevent/go@v1.0.0
 ```
 
-**Python** — packaged with `python/pyproject.toml`, but not yet on PyPI.
-Install from the repo subdirectory:
-
-```bash
-pip install "simsys-logevent @ git+https://github.com/Simmons-Systems/simsys-logevent.git#subdirectory=python"
-```
-
-All three lanes are published from this repo. None are on a public
-package index yet — npm and PyPI publication is planned, at which point
-the Node and Python snippets above become plain `npm install` /
-`pip install`.
+The GitHub release tarball is still produced for every `node-v*` tag and
+remains installable, but **pin the registry, not the tarball URL**. A
+tarball pin cannot be resolved on a host that sets npm's
+`allow-remote = "none"` — which includes the workstation this is
+developed on, so nobody there can `npm install` or regenerate a lockfile
+for a consumer that pins one.
 
 ## Usage
 
